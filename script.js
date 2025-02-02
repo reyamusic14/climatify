@@ -27,6 +27,12 @@ const climateFacts = {
     ]
 };
 
+// Add this near the top of your file
+const API_KEYS = {
+    unsplash: process.env.UNSPLASH_API_KEY,
+    openai: process.env.OPENAI_API_KEY
+};
+
 // Placeholder function for image generation
 async function generateImages() {
     const city = document.getElementById('city').value;
@@ -41,18 +47,28 @@ async function generateImages() {
     document.querySelector('.loading-section').classList.remove('hidden');
     document.querySelector('.gallery-section').classList.add('hidden');
 
-    // Simulate API call delay
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    try {
+        // Example of using the Unsplash API with your key
+        const response = await fetch(`/api/images?city=${city}&damageType=${damageType}`);
+        
+        const data = await response.json();
+        
+        // Update images with actual API response
+        const images = document.querySelectorAll('.image-card img');
+        images.forEach((img, index) => {
+            if (data[index]) {
+                img.src = data[index].urls.regular;
+            }
+        });
 
-    // Hide loading and show gallery
-    document.querySelector('.loading-section').classList.add('hidden');
-    document.querySelector('.gallery-section').classList.remove('hidden');
-
-    // Set placeholder images (replace with actual API calls in production)
-    const images = document.querySelectorAll('.image-card img');
-    images.forEach(img => {
-        img.src = `https://source.unsplash.com/800x600/?${damageType},${city}`;
-    });
+    } catch (error) {
+        console.error('Error fetching images:', error);
+        alert('Error generating images. Please try again.');
+    } finally {
+        // Hide loading and show gallery
+        document.querySelector('.loading-section').classList.add('hidden');
+        document.querySelector('.gallery-section').classList.remove('hidden');
+    }
 
     // Add click handlers to select buttons
     const selectButtons = document.querySelectorAll('.select-btn');
