@@ -48,16 +48,41 @@ async function generateImages() {
     document.querySelector('.gallery-section').classList.add('hidden');
 
     try {
-        // Example of using the Unsplash API with your key
-        const response = await fetch(`/api/images?city=${city}&damageType=${damageType}`);
-        
-        const data = await response.json();
-        
-        // Update images with actual API response
+        // Fetch both Unsplash and AI-generated images
+        const [unsplashResponse, aiResponse] = await Promise.all([
+            // Unsplash API call
+            fetch(`/api/unsplash?city=${city}&damageType=${damageType}`),
+            // OpenAI API call
+            fetch(`/api/generate-ai-image`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    city,
+                    damageType,
+                })
+            })
+        ]);
+
+        const [unsplashData, aiData] = await Promise.all([
+            unsplashResponse.json(),
+            aiResponse.json()
+        ]);
+
+        // Update images with both Unsplash and AI-generated images
         const images = document.querySelectorAll('.image-card img');
+        const aiSources = document.querySelectorAll('.ai-source');
+        
         images.forEach((img, index) => {
-            if (data[index]) {
-                img.src = data[index].urls.regular;
+            if (index < 2 && unsplashData[index]) {
+                // First 2 images from Unsplash
+                img.src = unsplashData[index].urls.regular;
+                aiSources[index].textContent = 'Source: Unsplash';
+            } else if (aiData.images && aiData.images[index - 2]) {
+                // Last 2 images from AI
+                img.src = aiData.images[index - 2].url;
+                aiSources[index].textContent = 'Source: AI Generated';
             }
         });
 
